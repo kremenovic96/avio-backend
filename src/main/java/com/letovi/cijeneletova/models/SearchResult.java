@@ -16,7 +16,7 @@ public class SearchResult {
     @Column
     private String polazniAerodromIataKod;
     @Column
-    private String OdredisniAerodromNazivIataKod;
+    private String odredisniAerodromNazivIataKod;
     @Column
     private String datumPolaska;
     @Column
@@ -57,11 +57,11 @@ public class SearchResult {
     }
 
     public String getOdredisniAerodromNazivIataKod() {
-        return OdredisniAerodromNazivIataKod;
+        return odredisniAerodromNazivIataKod;
     }
 
     public void setOdredisniAerodromNazivIataKod(String odredisniAerodromNazivIataKod) {
-        OdredisniAerodromNazivIataKod = odredisniAerodromNazivIataKod;
+        this.odredisniAerodromNazivIataKod = odredisniAerodromNazivIataKod;
     }
 
     public String getDatumPolaska() {
