@@ -3,6 +3,7 @@ package com.letovi.cijeneletova.controllers;
 import com.amadeus.Amadeus;
 import com.amadeus.Params;
 import com.amadeus.Response;
+import com.amadeus.exceptions.ClientException;
 import com.amadeus.exceptions.ResponseException;
 import com.amadeus.referenceData.Locations;
 import com.amadeus.resources.*;
@@ -52,9 +53,9 @@ public class HomeController {
             return ResponseEntity.ok(flightOffersSearches[0].getResponse().getBody());
 
         } catch (ResponseException e) {
-            e.printStackTrace();
+            return ResponseEntity.badRequest().body(e.getDescription());
+
         }
-        return null;
 
     }
 
@@ -72,7 +73,7 @@ public class HomeController {
             System.out.println(flightOffer.length);
 //                        return ResponseEntity.ok(flightOffer[0].getResponse().getBody());
 
-            for(int i = 0; i < flightOffer.length; i++) {
+            for (int i = 0; i < flightOffer.length; i++) {
                 System.out.println(flightOffer[i].getResponse().getBody());
             }
             List<SearchResult> flights = new ArrayList<>();
@@ -86,13 +87,13 @@ public class HomeController {
             return ResponseEntity.ok(flights);
 //            return ResponseEntity.ok(flightOffer[0].getResponse().getBody());
         } catch (ResponseException e) {
-            e.printStackTrace();
+            return ResponseEntity.badRequest().body(e.getDescription());
+//            return ResponseEntity.badRequest(e.getDescription()).build();
         }
-        return null;
     }
 
     @PostMapping("/locations/")
-    public ResponseEntity loc(@RequestBody Map<String, Object> searchCriteria) {
+    public ResponseEntity location(@RequestBody Map<String, Object> searchCriteria) {
 
         Location[] locations = new Location[0];
         try {
@@ -103,7 +104,7 @@ public class HomeController {
 
 
         } catch (ResponseException e) {
-            e.printStackTrace();
+            return ResponseEntity.badRequest().body(e.getDescription());
         }
         System.out.println(locations.length);
         for (int i = 0; i < locations.length; i++) {
