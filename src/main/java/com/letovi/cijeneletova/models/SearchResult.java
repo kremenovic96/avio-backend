@@ -1,7 +1,8 @@
 package com.letovi.cijeneletova.models;
 
 import javax.persistence.*;
-import java.sql.Date;
+import java.time.LocalDate;
+
 @Entity
 public class SearchResult {
 
@@ -18,9 +19,9 @@ public class SearchResult {
     @Column
     private String odredisniAerodromNazivIataKod;
     @Column
-    private String datumPolaska;
+    private LocalDate datumPolaska;
     @Column
-    private String datumPovratka;
+    private LocalDate datumPovratka;
 //    private Date datumPovratka;
     @Column
     private Integer brojPutnika;
@@ -28,6 +29,9 @@ public class SearchResult {
     private String valuta;
     @Column
     private Double ukupnaCijena;
+
+    private Integer brojPresjedanjaUOdlasku;
+    private Integer brojPresjedanjaUPovratku;
 
     public SearchResult() {
     }
@@ -64,19 +68,19 @@ public class SearchResult {
         this.odredisniAerodromNazivIataKod = odredisniAerodromNazivIataKod;
     }
 
-    public String getDatumPolaska() {
+    public LocalDate getDatumPolaska() {
         return datumPolaska;
     }
 
-    public void setDatumPolaska(String datumPolaska) {
+    public void setDatumPolaska(LocalDate datumPolaska) {
         this.datumPolaska = datumPolaska;
     }
 
-    public String getDatumPovratka() {
+    public LocalDate getDatumPovratka() {
         return datumPovratka;
     }
 
-    public void setDatumPovratka(String datumPovratka) {
+    public void setDatumPovratka(LocalDate datumPovratka) {
         this.datumPovratka = datumPovratka;
     }
 
@@ -102,5 +106,21 @@ public class SearchResult {
 
     public void setUkupnaCijena(Double ukupnaCijena) {
         this.ukupnaCijena = ukupnaCijena;
+    }
+
+    public Integer getBrojPresjedanjaUOdlasku() {
+        return brojPresjedanjaUOdlasku;
+    }
+
+    public void setBrojPresjedanjaUOdlasku(Integer brojPresjedanjaUOdlasku) {
+        this.brojPresjedanjaUOdlasku = brojPresjedanjaUOdlasku;
+    }
+
+    public Integer getBrojPresjedanjaUPovratku() {
+        return brojPresjedanjaUPovratku;
+    }
+
+    public void setBrojPresjedanjaUPovratku(Integer brojPresjedanjaUPovratku) {
+        this.brojPresjedanjaUPovratku = brojPresjedanjaUPovratku;
     }
 }
