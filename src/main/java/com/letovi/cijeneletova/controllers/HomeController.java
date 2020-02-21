@@ -30,10 +30,11 @@ public class HomeController {
     @Autowired
     SearchResultService searchResultService;
 
+    @Autowired
+    Amadeus amadeus;
+
     @PostMapping("/flightOffersSearches/")
     public ResponseEntity getFlightOffersSearches(@RequestBody Map<String, Object> searchCriteria) {
-        //i know i know..
-        Amadeus amadeus = Amadeus.builder("AlFQAWjfh36vJuGrPfqeNwz7aArIzY2l", "KDRoUNXWAyhv5eNK").build();
         try {
             FlightOfferSearch[] flightOffersSearches = amadeus.shopping.flightOffersSearch.get(
                     Params.with("originLocationCode", searchCriteria.get("originLocationCode"))
@@ -58,9 +59,9 @@ public class HomeController {
     }
 
     @PostMapping("/getFlightOffers/")
-    public ResponseEntity<List<SearchResult>> getFlightOffers(@RequestBody Map<String, Object> searchCriteria) {
-        Amadeus amadeus = Amadeus.builder("AlFQAWjfh36vJuGrPfqeNwz7aArIzY2l", "KDRoUNXWAyhv5eNK").build();
+    public ResponseEntity getFlightOffers(@RequestBody Map<String, Object> searchCriteria) {
         try {
+            System.out.println(searchCriteria.get("departureDate"));
             FlightOffer[] flightOffer = amadeus.shopping.flightOffers.get(Params.with(
                     "origin", searchCriteria.get("origin"))
                     .and("destination", searchCriteria.get("destination"))
@@ -69,6 +70,11 @@ public class HomeController {
                     .and("adults", searchCriteria.get("adults"))
                     .and("max", searchCriteria.get("max")));
             System.out.println(flightOffer.length);
+//                        return ResponseEntity.ok(flightOffer[0].getResponse().getBody());
+
+            for(int i = 0; i < flightOffer.length; i++) {
+                System.out.println(flightOffer[i].getResponse().getBody());
+            }
             List<SearchResult> flights = new ArrayList<>();
             for (int i = 0; i < flightOffer.length; i++) {
                 SearchResult searchResult = searchResultService.pushResultToDB(flightOffer[i], (String) searchCriteria.get("origin"),
@@ -78,7 +84,7 @@ public class HomeController {
             }
 
             return ResponseEntity.ok(flights);
-
+//            return ResponseEntity.ok(flightOffer[0].getResponse().getBody());
         } catch (ResponseException e) {
             e.printStackTrace();
         }
@@ -87,15 +93,13 @@ public class HomeController {
 
     @PostMapping("/locations/")
     public ResponseEntity loc(@RequestBody Map<String, Object> searchCriteria) {
-        Amadeus amadeus = Amadeus.builder("AlFQAWjfh36vJuGrPfqeNwz7aArIzY2l", "KDRoUNXWAyhv5eNK").build();
-
 
         Location[] locations = new Location[0];
         try {
             locations = amadeus.referenceData.locations.get(Params
                     .with((String) searchCriteria.get("key"), searchCriteria.get("keyword"))
-                    .and("keyword", "LHR")
-                    .and("subType", Locations.ANY));
+//                    .and("keyword", "LHR")
+                    .and("subType", Locations.AIRPORT));
 
 
         } catch (ResponseException e) {
