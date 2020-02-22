@@ -1,5 +1,8 @@
 package com.letovi.cijeneletova.services;
 
+import com.amadeus.Amadeus;
+import com.amadeus.Params;
+import com.amadeus.exceptions.ResponseException;
 import com.amadeus.resources.FlightDate;
 import com.amadeus.resources.FlightOffer;
 import com.amadeus.resources.Resource;
@@ -12,6 +15,9 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class SearchResultService {
@@ -19,61 +25,97 @@ public class SearchResultService {
     @Autowired
     SearchResultRepo searchResultRepo;
 
+    @Autowired
+    Amadeus amadeus;
+
     /**
      * @param flightOffer
      * @param iataCode
      * @return full airport name based on its iataCode
      */
-    public String getDetailedNameFromIataCode(FlightOffer flightOffer, String iataCode) {
+    private String getDetailedNameFromIataCode(FlightOffer flightOffer, String iataCode) {
         String detailedName = flightOffer.getResponse().getResult().getAsJsonObject("dictionaries").get("locations").getAsJsonObject().get(iataCode).getAsJsonObject().get("detailedName").toString()
                 .replaceAll("\"", "");
         return detailedName;
     }
 
 
-    public Double getTotalPrice(FlightOffer flightOffer) {
+    private Double getTotalPrice(FlightOffer flightOffer) {
         System.out.println(flightOffer.getOfferItems().length + " OfferItems len");
         return flightOffer.getOfferItems()[0].getPrice().getTotal();
     }
 
-    public int getNumberOfStopsFromOrigin(FlightOffer flightOffer) {
+    private int getNumberOfStopsFromOrigin(FlightOffer flightOffer) {
         return flightOffer.getOfferItems()[0].getServices()[0].getSegments().length - 1;
     }
 
-    public int getNumberOfStopsFromDestination(FlightOffer flightOffer) {
+    private int getNumberOfStopsFromDestination(FlightOffer flightOffer) {
         return flightOffer.getOfferItems()[0].getServices()[1].getSegments().length - 1;
+    }
+
+    public List<SearchResult> getCachedOrNew(Map<String, String> searchCriteria) throws ResponseException {
+
+        String origin = searchCriteria.get("origin");
+        String destination = searchCriteria.get("destination");
+        Integer numberOfAdults = Integer.valueOf(searchCriteria.get("adults"));
+        LocalDate departureDate = LocalDate.parse(searchCriteria.get("departureDate"));
+        LocalDate returnDate = LocalDate.parse(searchCriteria.get("returnDate"));
+        //number of results to get
+        String max = searchCriteria.get("max");
+        List<SearchResult> cachedSearchResults = searchResultRepo.findBySameFields(origin, destination, numberOfAdults, departureDate, returnDate);
+        if (!cachedSearchResults.isEmpty()) {
+            return cachedSearchResults;
+        }
+        return createNewSearchResult(origin, destination, departureDate, returnDate, numberOfAdults, max);
+    }
+
+
+    private List<SearchResult> createNewSearchResult(String origin, String destination, LocalDate departureDate, LocalDate returnDate, Integer numberOfAdults,
+                                  String max) throws ResponseException {
+
+        FlightOffer[] flightOffers = amadeus.shopping.flightOffers.get(Params.with(
+                "origin", origin)
+                .and("destination", destination)
+                .and("departureDate", departureDate)
+                .and("returnDate", returnDate)
+                .and("adults", numberOfAdults)
+                .and("max", max));
+        List<SearchResult> newlySavedSearchResults = new ArrayList<>();
+        for(FlightOffer flightOffer : flightOffers) {
+            //TODO: look into currency
+            newlySavedSearchResults.add(saveSearchToDb(flightOffer, origin, destination, numberOfAdults, departureDate, returnDate, "EUR"));
+        }
+        return newlySavedSearchResults;
     }
 
     /**
      * @param flightOffer
-     * @param polazniAerodromIataCode
-     * @param odredisniAerodromIataCode
-     * @param brojPutnika
-     * @param datumPolaska
-     * @param datumPovratka
-     * @param valuta
+     * @param originIataCode
+     * @param departureIataCode
+     * @param numberOfAdults
+     * @param departureDate
+     * @param returnDate
+     * @param currency
      * @return SearchResult with its fields populated with api call result
      */
-    public SearchResult pushResultToDB(FlightOffer flightOffer, String polazniAerodromIataCode, String odredisniAerodromIataCode, Integer brojPutnika, String datumPolaska, String datumPovratka,
-                                       String valuta) {
+    private SearchResult saveSearchToDb(FlightOffer flightOffer, String originIataCode, String departureIataCode, Integer numberOfAdults, LocalDate departureDate, LocalDate returnDate,
+                                       String currency) {
 
-        //parse string to localdate
-        LocalDate datumPovratkaDate = LocalDate.parse(datumPovratka);
-        LocalDate datumPolaskaDate = LocalDate.parse(datumPolaska);
 
         SearchResult searchResult = new SearchResult();
-        searchResult.setBrojPutnika(brojPutnika);
-        searchResult.setDatumPolaska(datumPolaskaDate);
-        searchResult.setDatumPovratka(datumPovratkaDate);
-        searchResult.setValuta(valuta);
-        searchResult.setPolazniAerodromIataKod(polazniAerodromIataCode);
-        searchResult.setOdredisniAerodromNazivIataKod(odredisniAerodromIataCode);
-        searchResult.setPolazniAerodromNaziv(getDetailedNameFromIataCode(flightOffer, polazniAerodromIataCode));
-        searchResult.setOdredisniAerodromNaziv(getDetailedNameFromIataCode(flightOffer, odredisniAerodromIataCode));
+        searchResult.setBrojPutnika(numberOfAdults);
+        searchResult.setDatumPolaska(departureDate);
+        searchResult.setDatumPovratka(returnDate);
+        searchResult.setValuta(currency);
+        searchResult.setPolazniAerodromIataKod(originIataCode);
+        searchResult.setOdredisniAerodromNazivIataKod(departureIataCode);
+        searchResult.setPolazniAerodromNaziv(getDetailedNameFromIataCode(flightOffer, originIataCode));
+        searchResult.setOdredisniAerodromNaziv(getDetailedNameFromIataCode(flightOffer, departureIataCode));
         searchResult.setUkupnaCijena(getTotalPrice(flightOffer));
         searchResult.setBrojPresjedanjaUOdlasku(getNumberOfStopsFromOrigin(flightOffer));
         searchResult.setBrojPresjedanjaUPovratku(getNumberOfStopsFromDestination(flightOffer));
         SearchResult savedSearch = searchResultRepo.save(searchResult);
         return savedSearch;
+
     }
 }
