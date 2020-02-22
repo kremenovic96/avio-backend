@@ -19,8 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+
 @Component
 public class SearchResultService {
+
+    private static final String DEPARTURE = "DEPARTURE";
+    private static final String ARRIVAL = "ARRIVAL";
 
     @Autowired
     SearchResultRepo searchResultRepo;
@@ -28,17 +32,55 @@ public class SearchResultService {
     @Autowired
     Amadeus amadeus;
 
+    @Autowired
+    AirPortAndCityService airPortAndCityService;
+
     /**
      * @param flightOffer
      * @param iataCode
      * @return full airport name based on its iataCode
      */
-    private String getDetailedNameFromIataCode(FlightOffer flightOffer, String iataCode) {
-        String detailedName = flightOffer.getResponse().getResult().getAsJsonObject("dictionaries").get("locations").getAsJsonObject().get(iataCode).getAsJsonObject().get("detailedName").toString()
-                .replaceAll("\"", "");
-        return detailedName;
+    private String getDetailedNameFromIataCode(FlightOffer flightOffer, String iataCode, String place) throws ResponseException {
+        //user entered iataCode for example JFK
+        if (flightOffer.getResponse().getResult().getAsJsonObject("dictionaries").get("locations").getAsJsonObject().get(iataCode.toUpperCase()) != null) {
+            String detailedName = flightOffer.getResponse().getResult().getAsJsonObject("dictionaries").get("locations").getAsJsonObject().get(iataCode).getAsJsonObject().get("detailedName").toString()
+                    .replaceAll("\"", "");
+            return detailedName;
+        }
+        //user entered code. like  NYC
+        else {
+            String arrivalAirPortIataCode = getAirPortIataCode(flightOffer, place);
+            return airPortAndCityService.getAirPortDetailedNameByKeyWord(arrivalAirPortIataCode);
+        }
     }
 
+    /***
+     *
+     * @param flightOffer
+     * @param place with value of ARRIVAL or DEPARTURE
+     * @return iata code of found airport
+     */
+    private String getAirPortIataCode(FlightOffer flightOffer, String place) {
+        switch (place) {
+            case "ARRIVAL":
+                return getArrivalAirPortIataCode(flightOffer);
+            case "DEPARTURE":
+                return getDepartureAirPortIataCode(flightOffer);
+            default:
+                throw new IllegalArgumentException("Place " + place + " not supported. Should be ARRIVAL or DEPARTURE");
+        }
+    }
+
+    private String getDepartureAirPortIataCode(FlightOffer flightOffer) {
+        String departureIata = flightOffer.getOfferItems()[0].getServices()[0].getSegments()[0].getFlightSegment().getDeparture().getIataCode();
+        return departureIata;
+    }
+
+    private String getArrivalAirPortIataCode(FlightOffer flightOffer) {
+        int lastFlightSegmentIndex = flightOffer.getOfferItems()[0].getServices()[0].getSegments().length - 1;
+        String arrivalIata = flightOffer.getOfferItems()[0].getServices()[0].getSegments()[lastFlightSegmentIndex].getFlightSegment().getArrival().getIataCode();
+        return arrivalIata;
+    }
 
     private Double getTotalPrice(FlightOffer flightOffer) {
         System.out.println(flightOffer.getOfferItems().length + " OfferItems len");
@@ -53,6 +95,12 @@ public class SearchResultService {
         return flightOffer.getOfferItems()[0].getServices()[1].getSegments().length - 1;
     }
 
+    /**
+     *
+     * @param searchCriteria
+     * @return existing SearchResult with same searchCriteria, or new if its not existent(saves it also)
+     * @throws ResponseException
+     */
     public List<SearchResult> getCachedOrNew(Map<String, String> searchCriteria) throws ResponseException {
 
         String origin = searchCriteria.get("origin");
@@ -62,11 +110,11 @@ public class SearchResultService {
         LocalDate returnDate = LocalDate.parse(searchCriteria.get("returnDate"));
         //number of results to get
         String max = searchCriteria.get("max");
-        List<SearchResult> cachedSearchResults = searchResultRepo.findBySameFields(origin, destination, numberOfAdults, departureDate, returnDate);
+        List<SearchResult> cachedSearchResults = searchResultRepo.findBySameFields(origin.toUpperCase(), destination.toUpperCase(), numberOfAdults, departureDate, returnDate);
         if (!cachedSearchResults.isEmpty()) {
             return cachedSearchResults;
         }
-        return createNewSearchResult(origin, destination, departureDate, returnDate, numberOfAdults, max);
+        return createNewSearchResult(origin.toUpperCase(), destination.toUpperCase(), departureDate, returnDate, numberOfAdults, max);
     }
 
 
@@ -96,10 +144,10 @@ public class SearchResultService {
      * @param departureDate
      * @param returnDate
      * @param currency
-     * @return SearchResult with its fields populated with api call result
+     * @return SearchResult with its fields populated with api call results
      */
     private SearchResult saveSearchToDb(FlightOffer flightOffer, String originIataCode, String departureIataCode, Integer numberOfAdults, LocalDate departureDate, LocalDate returnDate,
-                                       String currency) {
+                                       String currency) throws ResponseException {
 
 
         SearchResult searchResult = new SearchResult();
@@ -109,8 +157,8 @@ public class SearchResultService {
         searchResult.setValuta(currency);
         searchResult.setPolazniAerodromIataKod(originIataCode);
         searchResult.setOdredisniAerodromNazivIataKod(departureIataCode);
-        searchResult.setPolazniAerodromNaziv(getDetailedNameFromIataCode(flightOffer, originIataCode));
-        searchResult.setOdredisniAerodromNaziv(getDetailedNameFromIataCode(flightOffer, departureIataCode));
+        searchResult.setPolazniAerodromNaziv(getDetailedNameFromIataCode(flightOffer, originIataCode, DEPARTURE));
+        searchResult.setOdredisniAerodromNaziv(getDetailedNameFromIataCode(flightOffer, departureIataCode, ARRIVAL));
         searchResult.setUkupnaCijena(getTotalPrice(flightOffer));
         searchResult.setBrojPresjedanjaUOdlasku(getNumberOfStopsFromOrigin(flightOffer));
         searchResult.setBrojPresjedanjaUPovratku(getNumberOfStopsFromDestination(flightOffer));
