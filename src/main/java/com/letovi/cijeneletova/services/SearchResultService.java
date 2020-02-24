@@ -3,18 +3,13 @@ package com.letovi.cijeneletova.services;
 import com.amadeus.Amadeus;
 import com.amadeus.Params;
 import com.amadeus.exceptions.ResponseException;
-import com.amadeus.resources.FlightDate;
 import com.amadeus.resources.FlightOffer;
-import com.amadeus.resources.Resource;
 import com.letovi.cijeneletova.models.SearchResult;
 import com.letovi.cijeneletova.repositories.SearchResultRepo;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +104,7 @@ public class SearchResultService {
         LocalDate departureDate = LocalDate.parse(searchCriteria.get("departureDate"));
         LocalDate returnDate = LocalDate.parse(searchCriteria.get("returnDate"));
         //number of results to get
-        String max = searchCriteria.get("max");
+        String max = searchCriteria.getOrDefault("max", "10");
         List<SearchResult> cachedSearchResults = searchResultRepo.findBySameFields(origin.toUpperCase(), destination.toUpperCase(), numberOfAdults, departureDate, returnDate);
         if (!cachedSearchResults.isEmpty()) {
             return cachedSearchResults;
