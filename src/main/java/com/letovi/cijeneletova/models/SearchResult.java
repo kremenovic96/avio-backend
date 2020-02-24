@@ -123,4 +123,8 @@ public class SearchResult {
     public void setBrojPresjedanjaUPovratku(Integer brojPresjedanjaUPovratku) {
         this.brojPresjedanjaUPovratku = brojPresjedanjaUPovratku;
     }
+
+    public Integer getResultId() {
+        return resultId;
+    }
 }
