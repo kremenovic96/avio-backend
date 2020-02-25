@@ -2,22 +2,15 @@ package com.letovi.cijeneletova.controllers;
 
 import com.amadeus.Amadeus;
 import com.amadeus.Params;
-import com.amadeus.Response;
-import com.amadeus.exceptions.ClientException;
 import com.amadeus.exceptions.ResponseException;
 import com.amadeus.referenceData.Locations;
 import com.amadeus.resources.*;
-import com.amadeus.shopping.FlightOffers;
-import com.amadeus.shopping.FlightOffersSearch;
-import com.google.gson.JsonElement;
 import com.letovi.cijeneletova.models.SearchResult;
 import com.letovi.cijeneletova.repositories.SearchResultRepo;
 import com.letovi.cijeneletova.services.SearchResultService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +28,7 @@ public class HomeController {
     Amadeus amadeus;
 
     /**
-     * Currently not using
+     * For future use
      * @param searchCriteria
      * @return
      */
@@ -73,7 +66,7 @@ public class HomeController {
     }
 
     /**
-     * Currently not using
+     * For future use
      * @param searchCriteria
      * @return
      */
