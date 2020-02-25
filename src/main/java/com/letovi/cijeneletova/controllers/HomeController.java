@@ -34,6 +34,11 @@ public class HomeController {
     @Autowired
     Amadeus amadeus;
 
+    /**
+     * Currently not using
+     * @param searchCriteria
+     * @return
+     */
     @PostMapping("/flightOffersSearches/")
     public ResponseEntity getFlightOffersSearches(@RequestBody Map<String, Object> searchCriteria) {
         try {
@@ -44,10 +49,6 @@ public class HomeController {
                             .and("returnDate", searchCriteria.get("returnDate"))
                             .and("adults", searchCriteria.get("adults"))
                             .and("max", searchCriteria.get("max")));
-
-            //experimenting
-            System.out.println(flightOffersSearches[0].getPrice());
-            System.out.println(flightOffersSearches[0].getSource());
 
             System.out.println("ARRIVAL: " + flightOffersSearches[0].getItineraries()[0].getSegments()[0].getArrival());
             return ResponseEntity.ok(flightOffersSearches[0].getResponse().getBody());
@@ -71,6 +72,11 @@ public class HomeController {
         }
     }
 
+    /**
+     * Currently not using
+     * @param searchCriteria
+     * @return
+     */
     @PostMapping("/locations/")
     public ResponseEntity airPortSearch(@RequestBody Map<String, Object> searchCriteria) {
 
@@ -85,12 +91,8 @@ public class HomeController {
         } catch (ResponseException e) {
             return ResponseEntity.badRequest().body(e.getDescription());
         }
-        System.out.println(locations.length);
-        for (int i = 0; i < locations.length; i++) {
-            System.out.println(locations[i].getIataCode());
-            System.out.println(locations[i]);
-        }
         return ResponseEntity.ok(locations[0].getResponse().getBody());
 
     }
+
 }
