@@ -4,6 +4,7 @@ import com.amadeus.Amadeus;
 import com.amadeus.Params;
 import com.amadeus.exceptions.ResponseException;
 import com.amadeus.resources.FlightOffer;
+import com.google.gson.JsonElement;
 import com.letovi.cijeneletova.models.SearchResult;
 import com.letovi.cijeneletova.repositories.SearchResultRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +39,9 @@ public class SearchResultService {
     private String getDetailedNameFromIataCode(FlightOffer flightOffer, String iataCode, String place) throws ResponseException {
         //user entered iataCode for example JFK
         if (flightOffer.getResponse().getResult().getAsJsonObject("dictionaries").get("locations").getAsJsonObject().get(iataCode.toUpperCase()) != null) {
-            String detailedName = flightOffer.getResponse().getResult().getAsJsonObject("dictionaries").get("locations").getAsJsonObject().get(iataCode).getAsJsonObject().get("detailedName").toString()
-                    .replaceAll("\"", "");
-            return detailedName;
+            JsonElement airPortObj = flightOffer.getResponse().getResult().getAsJsonObject("dictionaries").get("locations").getAsJsonObject().get(iataCode).getAsJsonObject().get("detailedName");
+            return airPortObj != null ? airPortObj.toString()
+                    .replaceAll("\"", "") : "Nedostupno";
         }
         //user entered code. like  NYC
         else {
